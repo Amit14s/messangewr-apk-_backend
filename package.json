@@ -1,0 +1,23 @@
+{
+  "name": "messangewr-apk-_backend",
+  "version": "1.0.0",
+  "description": "started on date:25 Feb 2026",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongodb": "^7.1.0",
+    "mongoose": "^9.2.3",
+    "nodemon": "^3.1.14"
+  }
+}
