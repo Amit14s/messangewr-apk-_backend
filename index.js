@@ -1,17 +1,32 @@
 const express =require('express');
-const ookieparser=require('cookie-parser');
+const cookieparser=require('cookie-parser');
 const cors =require('cors');
 const dotenv=require('dotenv');
 const connecttodb = require('./config/connect_to_db');
+const bodyParser=require('body-parser');
+const authRoute=require('./routes/authRoute');
+
+
 
 dotenv.config();
 
-const PORT=process.env.PORT;
+const PORT=process.env.PORTT;
+
+
 const app=express();
+app.use(cors())
+app.use(express.json());
+app.use(cookieparser());
+app.use(bodyParser.urlencoded({extended:true}));
 
-// database connection
-connecttodb();
+//  database connection
+ connecttodb();
 
+// routes
+app.get('/', (req, res) => {
+    res.send("Server working");
+});
+app.use('/auth',authRoute)
 
 
 app.listen(PORT,()=>{
