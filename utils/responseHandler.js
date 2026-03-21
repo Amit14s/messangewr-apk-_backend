@@ -10,3 +10,4 @@ const response=(res,statusCode,message,data=null)=>{
     }
     return res.status(statusCode).json(responseObject);
 }
+module.exports=response
