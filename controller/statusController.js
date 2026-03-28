@@ -39,6 +39,15 @@ await status.save();
 
 const populateMessage=await Status.findOne(status?._id).populate("user","username profilePicture").populate("viewers","username profilePicture")
 
+if(req.io && req.socketUserMap){
+    // brodacast to all connecting user except the cretor
+    for(const [connectedUserId,socketId] of req.socketUserMap){
+        if(connectedUserId!==userId){
+            req.io.to(socketId).emit("new_status",populateMessage)
+        }
+    }
+}
+
 return response(res,200,"status created successfully",populateMessage)
 
 
@@ -73,6 +82,26 @@ exports.viewStatus=async(req,res)=>{
             status.viewers.push(userId);
             await status.save();
         }
+        const updateStatus=await Status.findById(statusId)
+        .populate("user","username,profilePicture")
+        .populate("viewers","username profilePicture")
+
+         if(req.io && req.socketUserMap){
+            const statusOwnerSocketId=req.socketUserMap.get(status.user._id.toString());
+            if(statusOwnerSocketId){
+                const viewData={
+                    statusId,
+                    viewerId:userId,
+                    totalViewers:updateStatus.viewers.length,
+                    viewers:updateStatus.viewers
+                }
+                res.io.to(statusOwnerSocketId).emit("status_viewed",viewData)
+            }
+            else{
+                console.log('status owner not connected')
+            }
+         }
+
         return response(res,200,'status viewed successfully')
     }
     catch(e){
@@ -88,6 +117,14 @@ exports.deleteStatus=async(req,res)=>{
         if(status.user.toString()!==userId)return response(res,400,'you are not authorized to perform this');
 
         await status.deleteOne();
+        if(req.io && req.socketUserMap){
+            for(const [connectedUserId,socketId] of req.socketUserMap){
+        if(connectedUserId!==userId){
+            req.io.to(socketId).emit("status_deleted",statusId)
+        }
+    }
+        }
+
         return response(res,200,'status deleted successfully');
     }
      catch(e){

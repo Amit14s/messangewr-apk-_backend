@@ -1,7 +1,8 @@
 const response=require('../utils/responseHandler')
 const Conversation=require('../models/conversation');
 const { uploadToCloudinary } = require('../config/cloudinaryConfig');
-const Message=require("../models/messages")
+const Message=require("../models/messages");
+const { populate } = require('../models/user.model');
 
 exports.sendMessage= async(req,res)=>{
     try{
@@ -46,6 +47,15 @@ conversation.unreadCount+=1;
 await conversation.save();
 
 const populateMessage=await Message.findOne(message?._id).populate("sender","username profilePicture").populate("receiver","username profilePicture")
+
+if(req.io && req.socketUserMap){
+    const receiverSocketId=req.socketUserMap.get(receiverId);
+    if(receiverSocketId){
+        req.io.to(receiverSocketId).emit("receive_message",populateMessage);
+        message.messageStatus='delivered';
+        await message.save()
+    }
+}
 
 return response(res,200,"message sent successfully",populateMessage)
 
@@ -108,6 +118,21 @@ return response(res,200,"message sent successfully",populateMessage)
         {_id:{$in:messageIds},receiver:userId},
         {$set:{messageStatus:"read"}}
       )
+
+   if(req.io && req.socketUserMap){
+        for(const message of messages ){
+            const senderSoketId=req.socketUserMap.get(message.sender.toString());
+            if(senderSoketId){
+                const updatedMessage={
+                    _id:mssage._id,
+                    messageStatus:"read"
+                }
+                req.io.to(senderSoketId).emit("message_read",updatedMessage);
+                await message.save();
+            }
+        }
+   }
+
       return response(res,200,"message marked as read",messages)
     }
        catch(e){
@@ -122,6 +147,12 @@ return response(res,200,"message sent successfully",populateMessage)
           if(!message)return response(res,404,'message not found');
           if(message.sender.toString!==userId)return response(res,404,"not authorized to delete");
           await message.deleteOne();
+          if(req.io && req.socketUserMap){
+            const receiverSocketId=req.socketUserMap.get(message.receiver.toString());
+            if(receiverSocketId){
+                req.io.to(receiverSocketId).emit("message_deleted",messageId)
+            }
+          }
           return response(res,200,"message deleted successfully");
     }
      catch(e){
