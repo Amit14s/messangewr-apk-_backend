@@ -5,8 +5,8 @@ const { sendOtptoEmail } = require('../services/emailService');
 const { sendotptophone } = require('../services/twilioService');
 const generateToken = require('../services/generateToken');
 const { uploadToCloudinary } = require('../config/cloudinaryConfig');
-const { Conversation } = require('twilio/lib/twiml/VoiceResponse');
 const user = require('../models/user.model');
+const Conversation=require("../models/conversation")
 
 const sendOtp=async(req,res,next)=>{
         const {phoneNumber,phoneSuffix,email}=req.body;
@@ -125,7 +125,7 @@ const getAllUser=async(req,res)=>{
 
             return {
             ...user,
-            conversation:conversation |null
+            conversation:conversation || null
            }
            })
         )
@@ -133,7 +133,8 @@ const getAllUser=async(req,res)=>{
   
     }
          catch(e){
-             return response(res,400,'in Catch block',e)
+              console.log(e)
+             return response(res,400,'in Catch block',e.message)
     }
 }
 module.exports={

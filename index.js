@@ -5,7 +5,7 @@ const dotenv=require('dotenv');
 const connecttodb = require('./config/connect_to_db');
 const bodyParser=require('body-parser');
 const authRoute=require('./routes/authRoute');
-
+const chatRoute=require('./routes/chatRoute')
 
 
 dotenv.config();
@@ -27,6 +27,7 @@ app.get('/', (req, res) => {
     res.send("Server working");
 });
 app.use('/auth',authRoute)
+app.use('/chat',chatRoute)
 
 
 app.listen(PORT,()=>{
