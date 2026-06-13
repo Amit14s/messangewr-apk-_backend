@@ -10,5 +10,5 @@ const statusSchema=new mongoose.Schema({
     timestampsL:true
 })
 
-const status=monggose.model('status',statusSchema);
+const status=mongoose.model('status',statusSchema);
 module.exports=status;

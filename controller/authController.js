@@ -34,7 +34,7 @@ await sendotptophone(fullPhoneNumber, otp)
         return response(res,200,'otp sent')
        }
     catch(e){
-             return response(res,400,'in Catch block',e)
+             return response(res,400,'in Catch block',e.message)
     }
 }
 

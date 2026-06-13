@@ -19,7 +19,7 @@ const corsOption={
     origin:process.env.FRONTEND_URL,
     credentials:true
 }
-
+console.log(process.env.FRONTEND_URL)
 app.use(cors(corsOption))
 app.use(express.json());
 app.use(cookieparser());
@@ -28,15 +28,17 @@ app.use(bodyParser.urlencoded({extended:true}));
 //  database connection
  connecttodb();
 
- const server=http.createServer(app);
- const io=initializeSocket(server);
+const server=http.createServer(app);
+const io=initializeSocket(server);
 
- app.use((req,res,nect)=>{
+app.use((req,res,next)=>{
     req.io=io;
     req.socketUserMap=io.socketUserMap
     next();
- })
-
+})
+server.listen(PORT,()=>{
+    console.log(`server running on PORT ${PORT}`);
+})
 // routes
 app.get('/', (req, res) => {
     res.send("Server working");

@@ -19,7 +19,7 @@ const initializeSocket=(server)=>{
 
     io.on('connection',(socket)=>{
         console.log(`User Connected : ${socket.id}`);
-        const userId=null;
+        let userId=null;
 
         socket.on('user_connected',async(connectingUserId)=>{
             try{
@@ -32,7 +32,7 @@ const initializeSocket=(server)=>{
               })
               io.emit('user_status',{userId,isOnline:true})
             }
-            catch(e){
+            catch(error){
              console.error('error occurs',error);
             }
         })
@@ -51,7 +51,7 @@ const initializeSocket=(server)=>{
                 io.to(receiverSocketId).emit("receive_message",message)
             }
                     }
-            catch(e){
+            catch(error){
                 console.error(e);
                 socket.emit("message_error",{error:'failed to send mesage'})
             }

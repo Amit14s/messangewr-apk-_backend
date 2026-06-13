@@ -6,7 +6,7 @@ const { populate } = require('../models/user.model');
 
 exports.sendMessage= async(req,res)=>{
     try{
-  const {senderId,receiverId,content,messageStatus}=req.body;
+  const {senderId,receiverId,content}=req.body;
   const file=req.file;
   const participants=[senderId,receiverId].sort();
   let conversation=await Conversation.findOne({

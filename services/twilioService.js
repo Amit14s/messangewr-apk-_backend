@@ -12,14 +12,14 @@ const sendotptophone=async(phoneNumber)=>{
       if(!phoneNumber){
         throw new Error('phone number is')
     }
-    const response=await client.verify.v2.services(servicesid).verification.create({
+    const response=await client.verify.v2.services(servicesid).verifications.create({
         to:phoneNumber,
         channel:'sms'
     });
     return response;
 }
 catch(e){
-    throw new Error('failed to Send OTp')
+    throw new Error(e.message)
 }
   }
 
