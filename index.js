@@ -46,7 +46,3 @@ app.get('/', (req, res) => {
 app.use('/auth',authRoute)
 app.use('/chat',chatRoute)
 app.use('/status',statusRoute)
-
-app.listen(PORT,()=>{
-    console.log(`server running on PORT ${PORT}`);
-})

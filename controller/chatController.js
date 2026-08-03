@@ -24,8 +24,8 @@ exports.sendMessage= async(req,res)=>{
     const uploadfile=await uploadToCloudinary(file);
     if(!uploadfile?.secure_url)return response(res,400,'failed to upload file')
     imageOrVideoUrl=uploadfile?.secure_url;
-    if(file.mimetype.startWith('image'))contentType="image"
-    else if(file.mimetype.startWith('video'))contentType="video"
+    if(file.mimetype.startsWith('image'))contentType="image"
+    else if(file.mimetype.startsWith('video'))contentType="video"
     else return response(res,400,'unsupported file type')
   }
   else if(content?.trim())contentType='text';
@@ -46,7 +46,7 @@ if(message?.content){
 conversation.unreadCount+=1;
 await conversation.save();
 
-const populateMessage=await Message.findOne(message?._id).populate("sender","username profilePicture").populate("receiver","username profilePicture")
+const populateMessage=await Message.findById(message?._id).populate("sender","username profilePicture").populate("receiver","username profilePicture")
 
 if(req.io && req.socketUserMap){
     const receiverSocketId=req.socketUserMap.get(receiverId);
@@ -124,7 +124,7 @@ return response(res,200,"message sent successfully",populateMessage)
             const senderSoketId=req.socketUserMap.get(message.sender.toString());
             if(senderSoketId){
                 const updatedMessage={
-                    _id:mssage._id,
+                    _id:message._id,
                     messageStatus:"read"
                 }
                 req.io.to(senderSoketId).emit("message_read",updatedMessage);

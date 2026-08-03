@@ -20,8 +20,8 @@ exports.createStatus= async(req,res)=>{
     const uploadfile=await uploadToCloudinary(file);
     if(!uploadfile?.secure_url)return response(res,400,'failed to upload file')
    mediaUrl=uploadfile?.secure_url;
-    if(file.mimetype.startWith('image'))finalcontentType="image"
-    else if(file.mimetype.startWith('video'))finalcontentType="video"
+    if(file.mimetype.startsWith('image'))finalcontentType="image"
+    else if(file.mimetype.startsWith('video'))finalcontentType="video"
     else return response(res,400,'unsupported file type')
   }
   else if(content?.trim())finalcontentType='text';
@@ -37,7 +37,7 @@ const status=new Status({
 })
 await status.save();
 
-const populateMessage=await Status.findOne(status?._id).populate("user","username profilePicture").populate("viewers","username profilePicture")
+const populateMessage=await Status.findById(status?._id).populate("user","username profilePicture").populate("viewers","username profilePicture")
 
 if(req.io && req.socketUserMap){
     // brodacast to all connecting user except the cretor
@@ -76,7 +76,7 @@ exports.viewStatus=async(req,res)=>{
     const {statusId}=req.params;
     const userId=req.user.userId;
     try{
-        const status=await Status.find(statusId);
+        const status=await Status.findById(statusId);
         if(!status)return response(res,400,'status not found');
         if(!status.viewers.includes(userId)){
             status.viewers.push(userId);
@@ -112,7 +112,7 @@ exports.deleteStatus=async(req,res)=>{
     const {statusId}=req.params;
     const userId=req.user.userId;
     try{
-        const status=await Status.find(statusId);
+        const status=await Status.findById(statusId);
         if(!status)return response(res,400,'status not found');
         if(status.user.toString()!==userId)return response(res,400,'you are not authorized to perform this');
 

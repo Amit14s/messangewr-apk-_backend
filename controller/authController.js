@@ -2,7 +2,7 @@ const otpGenerator=require('../utils/otpGenerator');
 const response=require('../utils/responseHandler');
 const User=require('../models/user.model');
 const { sendOtptoEmail } = require('../services/emailService');
-const { sendotptophone } = require('../services/twilioService');
+const { sendotptophone, verifyOtp } = require('../services/twilioService');
 const generateToken = require('../services/generateToken');
 const { uploadToCloudinary } = require('../config/cloudinaryConfig');
 const user = require('../models/user.model');
@@ -59,6 +59,25 @@ const verifyotp=async(req,res)=>{
             maxAge:1000*60*60*24*365
          });
          return response(res,200,'Otp verified Successfull',{token,user});
+      }
+      else {
+         user = await User.findOne({ phoneNumber });
+         if(!user)return response(res,404,'user not found');
+        const fullPhoneNumber = `${phoneSuffix}${phoneNumber}`;
+        const response = await verifyOtp(fullPhoneNumber,otp);
+        if(response.valid){
+            user.isVerified=true;
+             await user.save();
+         const token=generateToken(user?.id);
+         res.cookie("auth_token",token,{
+            httpOnly:true,
+            maxAge:1000*60*60*24*365
+         });
+         return response(res,200,'Otp verified Successfull',{token,user});
+        }
+        else {
+            return response(res,404,'Invalid or Expired Otp');
+        }
       }
     }
     catch(e){

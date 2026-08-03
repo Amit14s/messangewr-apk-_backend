@@ -7,7 +7,7 @@ const statusSchema=new mongoose.Schema({
     viewers:[{type:mongoose.Schema.Types.ObjectId,ref:'user'}],
     expiresAt:{type:Date,required:true}
 },{
-    timestampsL:true
+    timestamps:true
 })
 
 const status=mongoose.model('status',statusSchema);
