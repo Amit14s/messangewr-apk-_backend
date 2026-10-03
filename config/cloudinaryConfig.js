@@ -1,8 +1,8 @@
 const multer=require('multer');
-const cloudinary=require('cloudinary');
+const cloudinary = require("cloudinary").v2;
 const dotenv=require('dotenv')
 const fs=require('fs');
-
+dotenv.config();
 cloudinary.config({
     cloud_name:process.env.CLOUD_NAME,
     api_key:process.env.CLOUD_API,
@@ -10,7 +10,7 @@ cloudinary.config({
 });
 const uploadToCloudinary=(file)=>{
     const option={
-        resource_type:file.mimetype.startWith('video')?'video':'image',
+        resource_type:file.mimetype.startsWith('video')?'video':'image',
     }
     return new Promise((resolve,reject)=>{
         const uploader=file.mimetype.startsWith('video')?cloudinary.uploader.upload_large:cloudinary.uploader.upload;

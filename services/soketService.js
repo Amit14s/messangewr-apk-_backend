@@ -38,7 +38,7 @@ const initializeSocket=(server)=>{
         })
         socket.on('get_user_status',(requestedUserId,callback)=>{
             const isOnline=onlineUsers.has(requestedUserId);
-            calback({
+            callback({
                 userId:requestedUserId,
                 isOnline,
                 lastSeen:isOnline?new Date():null,

@@ -69,14 +69,11 @@ return response(res,200,"message sent successfully",populateMessage)
  exports.getConversation=async (req,res)=>{
     const userId=req.user.userId;
     try{
-        let conversation=await Conversation.find({participants:userId}).populate("participants","username profilePicture isOnline lastSeen").populate({
-            path:"sender receiver",
-            select:"username profilePicture"
-        }).sort({updatedAt:-1})
+        let conversation=await Conversation.find({participants:userId}).populate("participants","username profilePicture isOnline lastSeen").sort({updatedAt:-1})
         return response(res,201,"conversation get successful",conversation)
     }
      catch(e){
-        return response(res,404,'cannot send message',e)
+        return response(res,404,e.message,e)
     }
  }
  exports.getMessage=async(req,res)=>{

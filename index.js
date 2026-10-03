@@ -44,5 +44,5 @@ app.get('/', (req, res) => {
     res.send("Server working");
 });
 app.use('/auth',authRoute)
-app.use('/chat',chatRoute)
+app.use('/chats',chatRoute)
 app.use('/status',statusRoute)

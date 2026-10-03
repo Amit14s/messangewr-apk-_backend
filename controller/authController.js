@@ -64,8 +64,8 @@ const verifyotp=async(req,res)=>{
          user = await User.findOne({ phoneNumber });
          if(!user)return response(res,404,'user not found');
         const fullPhoneNumber = `${phoneSuffix}${phoneNumber}`;
-        const response = await verifyOtp(fullPhoneNumber,otp);
-        if(response.valid){
+        const resp = await verifyOtp(fullPhoneNumber,otp);
+        if(resp.valid){
             user.isVerified=true;
              await user.save();
          const token=generateToken(user?.id);
@@ -81,7 +81,7 @@ const verifyotp=async(req,res)=>{
       }
     }
     catch(e){
-             return response(res,400,'in Catch block',e)
+             return response(res,400,e.message,e)
     }
 }
 const updateProfile=async(req,res)=>{
@@ -104,7 +104,7 @@ const updateProfile=async(req,res)=>{
            return response(res,200,'user profile updated sucessfully',user)
     }
         catch(e){
-             return response(res,400,'in Catch block',e)
+             return response(res,400,e.message,e)
     }
 
 }
