@@ -156,6 +156,29 @@ const getAllUser=async(req,res)=>{
              return response(res,400,'in Catch block',e.message)
     }
 }
+const searchUser = async (req, res) => {
+    const { email, phone } = req.query;
+
+    const user = await User.findOne({
+        $or: [
+            { email: email },
+            { phone: phone }
+        ]
+    }).select("username email phone profilePicture");
+
+    if (!user) {
+        return res.status(404).json({
+            found: false,
+            message: "No user found"
+        });
+    }
+
+    res.json({
+        found: true,
+        user
+    });
+};
+
 module.exports={
     sendOtp,
     verifyotp,
@@ -163,4 +186,5 @@ module.exports={
     logout,
     checkAuthenticated,
     getAllUser,
+    searchUser
 }

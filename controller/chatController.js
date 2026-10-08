@@ -6,7 +6,11 @@ const { populate } = require('../models/user.model');
 
 exports.sendMessage= async(req,res)=>{
     try{
-  const {senderId,receiverId,content}=req.body;
+  const {receiverId,content}=req.body;
+   const senderId = req.user.userId;
+   console.log("senderId:", senderId);
+        console.log("receiverId:", receiverId);
+        console.log("content:", content);
   const file=req.file;
   const participants=[senderId,receiverId].sort();
   let conversation=await Conversation.findOne({
@@ -62,7 +66,8 @@ return response(res,200,"message sent successfully",populateMessage)
 
     }
     catch(e){
-        return response(res,404,'cannot send message',e.message)
+        console.log("send messge error",e);
+        return response(res,500,'cannot send message',e.message)
     }
 }
 
@@ -141,8 +146,8 @@ return response(res,200,"message sent successfully",populateMessage)
     const userId=req.user.userId;
     try{
           const message=await Message.findById(messageId);
-          if(!message)return response(res,404,'message not found');
-          if(message.sender.toString!==userId)return response(res,404,"not authorized to delete");
+          if(!message)return response(res,400,'message not found');
+          if(message.sender.toString() !==userId)return response(res,500,"not authorized to delete");
           await message.deleteOne();
           if(req.io && req.socketUserMap){
             const receiverSocketId=req.socketUserMap.get(message.receiver.toString());
@@ -153,6 +158,7 @@ return response(res,200,"message sent successfully",populateMessage)
           return response(res,200,"message deleted successfully");
     }
      catch(e){
-        return response(res,404,'Problem occured',e)
+        console.group("delete message error:" ,e)
+        return response(res,500,'Problem occured',e)
     } 
  }
