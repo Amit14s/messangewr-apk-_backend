@@ -3,14 +3,21 @@ const dotenv=require('dotenv');
 dotenv.config();
 console.log("EMAIL configured:", !!process.env.EMAIL);
 console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
-const transporter=nodemailer.createTransport({
-    service:'gmail',
-    auth:{
-        user:process.env.EMAIL,
-        pass:process.env.EMAIL_PASS
-    }
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS
+    },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000
 });
 transporter.verify((error, success) => {
+  console.log("EMAIL configured:", !!process.env.EMAIL);
+console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
     if (error) {
         console.error("Gmail connection failed:", error.message);
         console.error("Error code:", error.code);
