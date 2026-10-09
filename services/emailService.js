@@ -1,7 +1,8 @@
 const nodemailer=require('nodemailer');
 const dotenv=require('dotenv');
 dotenv.config();
-
+console.log("EMAIL configured:", !!process.env.EMAIL);
+console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
 const transporter=nodemailer.createTransport({
     service:'gmail',
     auth:{
@@ -9,13 +10,14 @@ const transporter=nodemailer.createTransport({
         pass:process.env.EMAIL_PASS
     }
 });
-transporter.verify((error,success)=>{
-    if(error){
-        console.log('gmail connection failed');
-
+transporter.verify((error, success) => {
+    if (error) {
+        console.error("Gmail connection failed:", error.message);
+        console.error("Error code:", error.code);
+    } else {
+        console.log("Gmail connection successful");
     }
-    else console.log('gmail connection successful')
-})
+});
 const sendOtptoEmail=async(email,otp)=>{
     const html = `
 <div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:40px 0;">
