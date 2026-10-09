@@ -157,26 +157,66 @@ const getAllUser=async(req,res)=>{
     }
 }
 const searchUser = async (req, res) => {
-    const { email, phone } = req.query;
+    const { email, phoneNumber, phoneSuffix } = req.query;
 
-    const user = await User.findOne({
-        $or: [
-            { email: email },
-            { phone: phone }
-        ]
-    }).select("username email phone profilePicture");
+    let user;
 
-    if (!user) {
-        return res.status(404).json({
+    try {
+
+        // Search by email
+        if (email) {
+
+            user = await User.findOne({
+                email: email.trim().toLowerCase()
+            }).select(
+                "username email phoneNumber phoneSuffix profilePicture"
+            );
+
+        }
+
+        // Search by phone
+        else if (phoneNumber && phoneSuffix) {
+
+            user = await User.findOne({
+                phoneNumber: phoneNumber.trim(),
+                phoneSuffix: phoneSuffix.trim()
+            }).select(
+                "username email phoneNumber phoneSuffix profilePicture"
+            );
+
+        }
+
+        // Nothing provided
+        else {
+            return res.status(400).json({
+                found: false,
+                message: "Enter email or phone"
+            });
+        }
+
+        // User doesn't exist
+        if (!user) {
+            return res.status(404).json({
+                found: false,
+                message: "No user found"
+            });
+        }
+
+        // User found
+        return res.status(200).json({
+            found: true,
+            user
+        });
+
+    } catch (error) {
+
+        console.error("Search user error:", error);
+
+        return res.status(500).json({
             found: false,
-            message: "No user found"
+            message: "Something went wrong"
         });
     }
-
-    res.json({
-        found: true,
-        user
-    });
 };
 
 module.exports={

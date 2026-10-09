@@ -72,42 +72,55 @@ exports.getStatus=async (req,res)=>{
         return response(res,404,'server error',e.message)
     }
 }
-exports.viewStatus=async(req,res)=>{
-    const {statusId}=req.params;
-    const userId=req.user.userId;
-    try{
-        const status=await Status.findById(statusId);
-        if(!status)return response(res,400,'status not found');
-        if(!status.viewers.includes(userId)){
+exports.viewStatus = async (req, res) => {
+    const { statusId } = req.params;
+    const userId = req.user.userId.toString();
+
+    try {
+        const status = await Status.findById(statusId);
+
+        if (!status)
+            return response(res, 404, "status not found");
+
+        const alreadyViewed = status.viewers.some(
+            id => id.toString() === userId
+        );
+
+        if (!alreadyViewed) {
             status.viewers.push(userId);
             await status.save();
         }
-        const updateStatus=await Status.findById(statusId)
-        .populate("user","username,profilePicture")
-        .populate("viewers","username profilePicture")
 
-         if(req.io && req.socketUserMap){
-            const statusOwnerSocketId=req.socketUserMap.get(status.user._id.toString());
-            if(statusOwnerSocketId){
-                const viewData={
-                    statusId,
-                    viewerId:userId,
-                    totalViewers:updateStatus.viewers.length,
-                    viewers:updateStatus.viewers
-                }
-                res.io.to(statusOwnerSocketId).emit("status_viewed",viewData)
-            }
-            else{
-                console.log('status owner not connected')
-            }
-         }
+        const updateStatus = await Status.findById(statusId)
+            .populate("user", "username profilePicture")
+            .populate("viewers", "username profilePicture");
 
-        return response(res,200,'status viewed successfully')
+        if (req.io && req.socketUserMap) {
+            const ownerId = status.user.toString();
+            const statusOwnerSocketId =
+                req.socketUserMap.get(ownerId);
+
+            if (statusOwnerSocketId) {
+                req.io.to(statusOwnerSocketId).emit("status_viewed", {
+                    statusId: status._id.toString(),
+                    viewerId: userId,
+                    totalViewers: updateStatus.viewers.length,
+                    viewers: updateStatus.viewers
+                });
+            }
+        }
+
+        return response(
+            res,
+            200,
+            "status viewed successfully",
+            updateStatus
+        );
+    } catch (e) {
+        console.error("viewStatus error:", e);
+        return response(res, 500, "server error", e.message);
     }
-    catch(e){
-        return response(res,404,'server error',e.message)
-    }
-}
+};
 exports.deleteStatus=async(req,res)=>{
     const {statusId}=req.params;
     const userId=req.user.userId;
