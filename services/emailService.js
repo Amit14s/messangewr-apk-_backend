@@ -1,13 +1,12 @@
+const dns = require("node:dns");
+dns.setDefaultResultOrder("ipv4first");
 const nodemailer=require('nodemailer');
 const dotenv=require('dotenv');
 dotenv.config();
 console.log("EMAIL configured:", !!process.env.EMAIL);
 console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
-const dns = require("node:dns");
-dns.setDefaultResultOrder("ipv4first");
 
-const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
+
 
 dotenv.config();
 const transporter = nodemailer.createTransport({
