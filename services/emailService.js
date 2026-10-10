@@ -3,76 +3,52 @@ dns.setDefaultResultOrder("ipv4first");
 const nodemailer=require('nodemailer');
 const dotenv=require('dotenv');
 dotenv.config();
-console.log("EMAIL configured:", !!process.env.EMAIL);
-console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
 
 
-
-dotenv.config();
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 30000
-});
-transporter.verify((error, success) => {
-  console.log("EMAIL configured:", !!process.env.EMAIL);
-console.log("EMAIL_PASS configured:", !!process.env.EMAIL_PASS);
-    if (error) {
-        console.error("Gmail connection failed:", error.message);
-        console.error("Error code:", error.code);
-    } else {
-        console.log("Gmail connection successful");
-    }
-});
-const sendOtptoEmail=async(email,otp)=>{
+const sendOtptoEmail = async (email, otp) => {
     const html = `
-<div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:40px 0;">
-  
-  <div style="max-width:500px; margin:auto; background:#ffffff; padding:30px; border-radius:10px; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
-    
-    <h2 style="color:#333;">Email Verification</h2>
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Messanger Email Verification</h2>
+        <p>Your OTP for email verification is:</p>
+        <h1 style="letter-spacing: 5px;">${otp}</h1>
+        <p>This code is valid for 5 minutes.</p>
+        <p>Do not share this code with anyone.</p>
+      </div>
+    `;
 
-    <p style="color:#555; font-size:15px;">
-      Use the OTP below to verify your email address.
-    </p>
+    const response = await fetch(
+        "https://api.brevo.com/v3/smtp/email",
+        {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "api-key": process.env.BREVO_API_KEY,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                sender: {
+                    name: "Messangewr",
+                    email: process.env.BREVO_SENDER_EMAIL
+                },
+                to: [{ email }],
+                subject: "Your Messangewr Verification Code",
+                htmlContent: html
+            })
+        }
+    );
 
-    <div style="
-      font-size:32px;
-      font-weight:bold;
-      letter-spacing:6px;
-      margin:25px 0;
-      color:#4F46E5;
-    ">
-      ${otp}
-    </div>
+    const data = await response.json();
 
-    <p style="color:#777; font-size:14px;">
-      This code will expire in <b>10 minutes</b>.
-    </p>
+    if (!response.ok) {
+        console.error("Brevo email error:", data);
+        throw new Error("Failed to send OTP email");
+    }
 
-    <p style="color:#999; font-size:13px;">
-      If you didn't request this code, you can safely ignore this email.
-    </p>
+    return data;
+};
 
-  </div>
+module.exports = { sendOtptoEmail };
 
-</div>
-`;
-
-await transporter.sendMail({
-    from:`messanger Web < ${process.env.EMAIL}`,
-    to:email,
-    subject:'your messanger verification Code',
-    html,
-})
-}
 
 module.exports={
     sendOtptoEmail,
