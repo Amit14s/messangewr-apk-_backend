@@ -21,21 +21,28 @@ const initializeSocket = (server) => {
         console.log(`User Connected : ${socket.id}`);
         let userId = null;
 
-        socket.on('user_connected', async (connectingUserId) => {
+        socket.on("user_connected", async (connectingUserId) => {
             try {
-                userId = connectingUserId
+                userId = String(connectingUserId);
+                socket.data.userId = userId;
+
                 onlineUsers.set(userId, socket.id);
                 socket.join(userId);
+
                 await User.findByIdAndUpdate(userId, {
                     isOnline: true,
                     lastSeen: new Date(),
-                })
-                io.emit('user_status', { userId, isOnline: true })
+                });
+
+                io.emit("user_status", {
+                    userId,
+                    isOnline: true,
+                });
+            } catch (error) {
+                console.error("Error registering user:", error);
             }
-            catch (error) {
-                console.error('error occurs', error);
-            }
-        })
+
+        });
         socket.on('get_user_status', (requestedUserId, callback) => {
             const isOnline = onlineUsers.has(requestedUserId);
             callback({
@@ -46,7 +53,9 @@ const initializeSocket = (server) => {
         })
         socket.on('send_message', async (message) => {
             try {
-                const receiverSocketId = onlineUsers.get(message.receiver?._id);
+                const receiverSocketId = onlineUsers.get(
+                    String(message.receiver?._id)
+                );
                 if (receiverSocketId) {
                     io.to(receiverSocketId).emit("receive_message", message)
                 }
@@ -160,7 +169,7 @@ const initializeSocket = (server) => {
                         .populate(
                             "reactions.user",
                             "username profilePicture"
-    );
+                        );
 
                     const reactionUpdated = {
                         messageId: message._id,
@@ -196,32 +205,47 @@ const initializeSocket = (server) => {
         );
         const handleDisconnected = async () => {
             if (!userId) return;
+
             try {
-                onlineUsers.delete(userId)
+                // Ignore disconnects from an old socket
+                if (onlineUsers.get(userId) !== socket.id) {
+                    return;
+                }
+
+                onlineUsers.delete(userId);
+
                 if (typingUser.has(userId)) {
                     const userTyping = typingUser.get(userId);
+
                     Object.keys(userTyping).forEach((key) => {
-                        if (key.endsWith('_timeout')) clearTimeout(userTyping[key]);
-                    })
+                        if (key.endsWith("_timeout")) {
+                            clearTimeout(userTyping[key]);
+                        }
+                    });
+
                     typingUser.delete(userId);
                 }
-                await User.findByIdAndUpdate(userId,
-                    {
-                        isOnline: false,
-                        lastSeen: new Date(),
-                    }
-                )
+
+                const lastSeen = new Date();
+
+                await User.findByIdAndUpdate(userId, {
+                    isOnline: false,
+                    lastSeen,
+                });
+
                 io.emit("user_status", {
                     userId,
                     isOnline: false,
-                    lastSeen: new Date()
-                })
+                    lastSeen,
+                });
+
                 socket.leave(userId);
-                console.log(`user ${userId} disconnected`)
+                console.log(`User ${userId} disconnected`);
             } catch (error) {
-                console.error("error handling disconnection", error)
+                console.error("Error handling disconnection:", error);
             }
-        }
+
+        };
         socket.on('disconnect', handleDisconnected)
     })
     io.socketUserMap = onlineUsers;
