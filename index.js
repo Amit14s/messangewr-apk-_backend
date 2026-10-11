@@ -16,7 +16,7 @@ const PORT=process.env.PORTT;
 const app=express();
 
 const corsOption={
-    origin:process.env.FRONTEND_URL,
+    origin:[process.env.FRONTEND_URL,process.env.FRONTEND_URL2],
     credentials:true
 }
 console.log(process.env.FRONTEND_URL)
