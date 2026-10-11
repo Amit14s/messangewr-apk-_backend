@@ -22,27 +22,35 @@ const initializeSocket = (server) => {
         let userId = null;
 
         socket.on("user_connected", async (connectingUserId) => {
-            try {
-                userId = String(connectingUserId);
-                socket.data.userId = userId;
+    try {
+        if (!connectingUserId) return;
 
-                onlineUsers.set(userId, socket.id);
-                socket.join(userId);
+        userId = String(connectingUserId);
+        socket.data.userId = userId;
 
-                await User.findByIdAndUpdate(userId, {
-                    isOnline: true,
-                    lastSeen: new Date(),
-                });
+        let sockets = onlineUsers.get(userId);
 
-                io.emit("user_status", {
-                    userId,
-                    isOnline: true,
-                });
-            } catch (error) {
-                console.error("Error registering user:", error);
-            }
+        if (!sockets) {
+            sockets = new Set();
+            onlineUsers.set(userId, sockets);
+        }
 
+        sockets.add(socket.id);
+        socket.join(userId);
+
+        await User.findByIdAndUpdate(userId, {
+            isOnline: true,
+            lastSeen: new Date(),
         });
+
+        io.emit("user_status", {
+            userId,
+            isOnline: true,
+        });
+    } catch (error) {
+        console.error("Error registering user:", error);
+    }
+});
 
         socket.on("get_user_status", async (requestedUserId, callback) => {
             try {
@@ -228,48 +236,50 @@ const initializeSocket = (server) => {
             }
         );
         const handleDisconnected = async () => {
-            if (!userId) return;
+    if (!userId) return;
 
-            try {
-                // Ignore disconnects from an old socket
-                if (onlineUsers.get(userId) !== socket.id) {
-                    return;
+    try {
+        const sockets = onlineUsers.get(userId);
+
+        if (!sockets) return;
+
+        sockets.delete(socket.id);
+
+        // Another window or device is still connected.
+        if (sockets.size > 0) return;
+
+        onlineUsers.delete(userId);
+
+        if (typingUser.has(userId)) {
+            const userTyping = typingUser.get(userId);
+
+            Object.keys(userTyping).forEach((key) => {
+                if (key.endsWith("_timeout")) {
+                    clearTimeout(userTyping[key]);
                 }
+            });
 
-                onlineUsers.delete(userId);
+            typingUser.delete(userId);
+        }
 
-                if (typingUser.has(userId)) {
-                    const userTyping = typingUser.get(userId);
+        const lastSeen = new Date();
 
-                    Object.keys(userTyping).forEach((key) => {
-                        if (key.endsWith("_timeout")) {
-                            clearTimeout(userTyping[key]);
-                        }
-                    });
+        await User.findByIdAndUpdate(userId, {
+            isOnline: false,
+            lastSeen,
+        });
 
-                    typingUser.delete(userId);
-                }
+        io.emit("user_status", {
+            userId,
+            isOnline: false,
+            lastSeen,
+        });
 
-                const lastSeen = new Date();
-
-                await User.findByIdAndUpdate(userId, {
-                    isOnline: false,
-                    lastSeen,
-                });
-
-                io.emit("user_status", {
-                    userId,
-                    isOnline: false,
-                    lastSeen,
-                });
-
-                socket.leave(userId);
-                console.log(`User ${userId} disconnected`);
-            } catch (error) {
-                console.error("Error handling disconnection:", error);
-            }
-
-        };
+        console.log(`User ${userId} disconnected`);
+    } catch (error) {
+        console.error("Error handling disconnection:", error);
+    }
+};
         socket.on('disconnect', handleDisconnected)
     })
     io.socketUserMap = onlineUsers;
