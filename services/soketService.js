@@ -43,14 +43,38 @@ const initializeSocket = (server) => {
             }
 
         });
-        socket.on('get_user_status', (requestedUserId, callback) => {
-            const isOnline = onlineUsers.has(requestedUserId);
-            callback({
-                userId: requestedUserId,
-                isOnline,
-                lastSeen: isOnline ? new Date() : null,
-            })
-        })
+
+        socket.on("get_user_status", async (requestedUserId, callback) => {
+            try {
+                const id = String(requestedUserId);
+
+                const user = await User.findById(id)
+                    .select("isOnline lastSeen");
+
+                if (!user) {
+                    return callback?.({
+                        userId: id,
+                        isOnline: false,
+                        lastSeen: null,
+                    });
+                }
+
+                callback?.({
+                    userId: id,
+                    isOnline: onlineUsers.has(id),
+                    lastSeen: user.lastSeen || null,
+                });
+            } catch (error) {
+                console.error("Error getting user status:", error);
+
+                callback?.({
+                    userId: String(requestedUserId),
+                    isOnline: false,
+                    lastSeen: null,
+                });
+            }
+        });
+
         socket.on('send_message', async (message) => {
             try {
                 const receiverSocketId = onlineUsers.get(
