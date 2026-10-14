@@ -38,7 +38,9 @@ const sendOtptoEmail = async (email, otp) => {
     );
 
     const data = await response.json();
-
+console.log("OTP recipient:", email);
+console.log("Brevo HTTP status:", response.status);
+console.log("Brevo response:", data);
     if (!response.ok) {
         console.error("Brevo email error:", data);
         throw new Error("Failed to send OTP email");
@@ -48,8 +50,3 @@ const sendOtptoEmail = async (email, otp) => {
 };
 
 module.exports = { sendOtptoEmail };
-
-
-module.exports={
-    sendOtptoEmail,
-}
