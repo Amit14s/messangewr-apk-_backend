@@ -39,6 +39,9 @@ const sendotptophone = async (phoneNumber) => {
         },
       }
     );
+  console.log("MSG91 HTTP status:", response.status);
+console.log("MSG91 response:", response.data);
+console.log("MSG91 mobile:", mobile);
 
     return response.data;
   } catch (error) {
