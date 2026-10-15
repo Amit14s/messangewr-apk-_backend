@@ -126,15 +126,23 @@ const checkAuthenticated = async (req, res) => {
         return response(res, 400, 'in Catch block', e)
     }
 }
+
 const logout = async (req, res) => {
     try {
-        res.cookie('auth_token', "", { expires: new Date(0) });
-        return response(res, 200, 'user logout sucessfully');
+        res.clearCookie("auth_token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/"
+        });
+
+        return response(res, 200, "User logged out successfully");
+    } catch (e) {
+        console.error("Logout error:", e);
+        return response(res, 500, "Logout failed");
     }
-    catch (e) {
-        return response(res, 400, 'in Catch block', e)
-    }
-}
+};
+
 const getAllUser = async (req, res) => {
     const loggedInuser = req.user.userId;
     try {
