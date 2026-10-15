@@ -52,14 +52,21 @@ await conversation.save();
 
 const populateMessage=await Message.findById(message?._id).populate("sender","username profilePicture").populate("receiver","username profilePicture")
 
-if(req.io && req.socketUserMap){
-    const receiverSocketId=req.socketUserMap.get(receiverId);
-    if(receiverSocketId){
-        req.io.to(receiverSocketId).emit("receive_message",populateMessage);
-        message.messageStatus='delivered';
-        await message.save()
+
+if (req.io) {
+    const receiverIdString = String(receiverId);
+
+    // The receiver joins this room when user_connected is emitted.
+    const receiverOnline = req.socketUserMap?.has(receiverIdString);
+
+    if (receiverOnline) {
+        req.io.to(receiverIdString).emit("receive_message", populateMessage);
+
+        message.messageStatus = "delivered";
+        await message.save();
     }
 }
+
 
 return response(res,200,"message sent successfully",populateMessage)
 
@@ -107,58 +114,72 @@ return response(res,200,"message sent successfully",populateMessage)
     }
  }
  
- exports.markAsRead=async(req,res)=>{
-    const {messageIds}=req.body;
-    const userId=req.user.userId;
-    try{
-      let messages=await Message.find({
-        _id:{$in:messageIds},
-        receiver:userId,
-      })
+ 
+exports.markAsRead = async (req, res) => {
+    const { messageIds } = req.body;
+    const userId = String(req.user.userId);
 
-      await Message.updateMany(
-        {_id:{$in:messageIds},receiver:userId},
-        {$set:{messageStatus:"read"}}
-      )
+    try {
+        const messages = await Message.find({
+            _id: { $in: messageIds },
+            receiver: userId
+        });
 
-   if(req.io && req.socketUserMap){
-        for(const message of messages ){
-            const senderSoketId=req.socketUserMap.get(message.sender.toString());
-            if(senderSoketId){
-                const updatedMessage={
-                    _id:message._id,
-                    messageStatus:"read"
-                }
-                req.io.to(senderSoketId).emit("message_read",updatedMessage);
-                await message.save();
+        await Message.updateMany(
+            {
+                _id: { $in: messageIds },
+                receiver: userId
+            },
+            { $set: { messageStatus: "read" } }
+        );
+
+        if (req.io) {
+            for (const message of messages) {
+                const senderId = String(message.sender);
+
+                req.io.to(senderId).emit("message_status_update", {
+                    messageId: String(message._id),
+                    messageStatus: "read"
+                });
             }
         }
-   }
 
-      return response(res,200,"message marked as read",messages)
+        return response(res, 200, "message marked as read", messages);
+    } catch (e) {
+        console.error("markAsRead error:", e);
+        return response(res, 500, "Problem occurred", e.message);
     }
-       catch(e){
-        return response(res,404,'Problem occured',e)
-    } 
- }
- exports.deleteMessage=async(req,res)=>{
-    const {messageId}=req.params;
-    const userId=req.user.userId;
-    try{
-          const message=await Message.findById(messageId);
-          if(!message)return response(res,400,'message not found');
-          if(message.sender.toString() !==userId)return response(res,500,"not authorized to delete");
-          await message.deleteOne();
-          if(req.io && req.socketUserMap){
-            const receiverSocketId=req.socketUserMap.get(message.receiver.toString());
-            if(receiverSocketId){
-                req.io.to(receiverSocketId).emit("message_deleted",messageId)
-            }
-          }
-          return response(res,200,"message deleted successfully");
+};
+
+ 
+exports.deleteMessage = async (req, res) => {
+    const { messageId } = req.params;
+    const userId = String(req.user.userId);
+
+    try {
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+            return response(res, 404, "Message not found");
+        }
+
+        if (String(message.sender) !== userId) {
+            return response(res, 403, "Not authorized to delete");
+        }
+
+        const senderId = String(message.sender);
+        const receiverId = String(message.receiver);
+
+        await message.deleteOne();
+
+        if (req.io) {
+            req.io.to(senderId).emit("message_deleted", String(messageId));
+            req.io.to(receiverId).emit("message_deleted", String(messageId));
+        }
+
+        return response(res, 200, "Message deleted successfully");
+    } catch (e) {
+        console.error("deleteMessage error:", e);
+        return response(res, 500, "Problem occurred", e.message);
     }
-     catch(e){
-        console.group("delete message error:" ,e)
-        return response(res,500,'Problem occured',e)
-    } 
- }
+};
