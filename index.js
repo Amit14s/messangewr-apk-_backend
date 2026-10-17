@@ -43,6 +43,13 @@ server.listen(PORT,()=>{
 app.get('/', (req, res) => {
     res.send("Server working");
 });
+app.get('/health',(req,res)=>{
+    res.status(200).json({
+        success:true,
+        message:"server is healthy",
+        timestamp:new Date().toISOString(),
+    })
+})
 app.use('/auth',authRoute)
 app.use('/chats',chatRoute)
 app.use('/status',statusRoute)
